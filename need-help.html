@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>I Need Help - UbuntuLink</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    async function saveRequest(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const category = document.getElementById('category').value;
+      const description = document.getElementById('description').value.trim();
+      const location = document.getElementById('location').value.trim();
+      const contact = document.getElementById('contact').value.trim();
+
+      if (!name || !description) {
+        alert('Please enter your name and a short description.');
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, 'helpRequests'), {
+          name,
+          category,
+          description,
+          location,
+          contact,
+          status: 'open',
+          createdAt: serverTimestamp()
+        });
+        alert('✅ Request submitted!');
+        window.location.href = 'index.html';
+      } catch (err) {
+        console.error(err);
+        alert('Error saving request. Check console.');
+      }
+    }
+
+    window.saveRequest = saveRequest;
+  </script>
+</head>
+<body>
+  <h2>🆘 I Need Help</h2>
+  <form onsubmit="saveRequest(event)">
+    <label>Your name*</label>
+    <input id="name" type="text" />
+
+    <label>Category</label>
+    <select id="category">
+      <option>Food</option>
+      <option>Clothes</option>
+      <option>Money</option>
+      <option>Repairs</option>
+      <option>Other</option>
+    </select>
+
+    <label>Short description*</label>
+    <textarea id="description"></textarea>
+
+    <label>Location (text)</label>
+    <input id="location" type="text" placeholder="e.g. Soweto, Johannesburg" />
+
+    <label>Contact / WhatsApp link (optional)</label>
+    <input id="contact" type="text" placeholder="https://wa.me/27XXXXXXXXX" />
+
+    <button class="btn" type="submit">Submit</button>
+  </form>
+
+  <a href="index.html" class="back-btn">← Back to Home</a>
+</body>
+</html>

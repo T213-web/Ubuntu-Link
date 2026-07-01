@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>I Can Help - UbuntuLink</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, getDocs, updateDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    async function loadRequests() {
+      const list = document.getElementById('helpList');
+      list.innerHTML = 'Loading...';
+
+      try {
+        // get open requests ordered by newest
+        const q = query(collection(db, 'helpRequests'), where('status', '==', 'open'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        list.innerHTML = '';
+        if (snapshot.empty) {
+          list.innerHTML = '<p>No requests yet. Check back soon.</p>';
+          return;
+        }
+
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const id = docSnap.id;
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <h3>${escapeHtml(data.name)}</h3>
+            <p><strong>Category:</strong> ${escapeHtml(data.category)}</p>
+            <p>${escapeHtml(data.description)}</p>
+            <p><strong>Location:</strong> ${escapeHtml(data.location || 'Not specified')}</p>
+            ${data.contact ? `<a href="${escapeHtml(data.contact)}" target="_blank" class="btn small">Contact</a>` : ''}
+            <button class="btn small" onclick="markResolved('${id}')">Mark as Resolved</button>
+          `;
+          list.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+        list.innerHTML = '<p>Error loading requests. Check console.</p>';
+      }
+    }
+
+    async function markResolved(id) {
+      try {
+        await updateDoc(doc(db, 'helpRequests', id), { status: 'resolved' });
+        alert('Marked as resolved ✅');
+        loadRequests();
+      } catch (err) {
+        console.error(err);
+        alert('Error marking resolved.');
+      }
+    }
+
+    // small helper to avoid simple HTML injection for display
+    function escapeHtml(str = '') {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    window.markResolved = markResolved;
+    window.onload = loadRequests;
+  </script>
+</head>
+<body>
+  <h2>💪 I Can Help</h2>
+  <div id="helpList">Loading...</div>
+  <a href="index.html" class="back-btn">← Back to Home</a>
+</body>
+</html>
